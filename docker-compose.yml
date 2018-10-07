@@ -1,0 +1,72 @@
+version: '2'
+
+
+services:
+  kusanagi-data:
+    #container_name: kusanagi-data
+    image: busybox
+    restart: always
+    stdin_open: true
+    tty: true
+    volumes:
+      - "./assets/db:/var/lib/mysql"
+      - "./assets/etc/nginx:/etc/nginx/conf.d"
+      - "./assets/etc/httpd:/etc/httpd/conf.d"
+      - "./assets/etc:/etc/kusanagi.d"
+      - "./wordpress:/home/kusanagi/wp/DocumentRoot"
+      - "./assets/log:/home/kusanagi/wp/log"
+      - "./assets/settings:/home/kusanagi/wp/settings"
+      - "./assets/tools:/home/kusanagi/wp/tools"
+    command: /bin/sh
+  
+  kusanagi-nginx:
+    #container_name: kusanagi-nginx
+    image: primestrategy/kusanagi-nginx:1.10.0-1
+    environment:
+      PROFILE: wp
+      FQDN: domain.com
+      WPLANG: zh_TW
+      BCACHE: "off"
+      FCACHE: "off"
+    volumes_from:
+      - kusanagi-data
+    links:
+      - kusanagi-php7:php
+    ports:
+      - "80:80"
+      - "443:443"
+  
+  kusanagi-mariadb:
+    #container_name: kusanagi-mariadb
+    image: mariadb:10.0.24
+    environment:
+      MYSQL_ROOT_PASSWORD: my-secret-pw
+      MYSQL_USER:     username
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: wordpress
+    volumes_from:
+      - kusanagi-data
+  
+  kusanagi-php7:
+    #container_name: kusanagi-php7
+    image: primestrategy/kusanagi-php7:7.0.6-1
+    links:
+      - kusanagi-mariadb:mysql
+    volumes_from:
+      - kusanagi-data
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_HOST kusanagi-mariadb
+    links:
+      - kusanagi-mariadb:db
+    ports:
+      - 8092:80
+    depends_on:
+      - kusanagi-mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: my-secret-pw
+      MYSQL_USER:     username
+      MYSQL_PASSWORD: password
+      MYSQL_DATABASE: wordpress
