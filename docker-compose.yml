@@ -26,8 +26,8 @@ services:
       PROFILE: wp
       FQDN: domain.com
       WPLANG: zh_TW
-      BCACHE: "off"
-      FCACHE: "off"
+      BCACHE: "on"
+      FCACHE: "on"
     volumes_from:
       - kusanagi-data
     links:
